@@ -1,4 +1,56 @@
-// backend/server.js
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const multer = require('multer');
+const path = require('path');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+app.use('/uploads', express.static('uploads')); // Serve uploaded images
+
+// Multer setup for image upload
+const storage = multer.diskStorage({
+  destination: 'uploads/',
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage: storage });
+
+// In-memory products
+let products = [];
+
+// Routes
+app.get('/', (req, res) => res.json({ message: "✅ KenyaMarket Backend Running" }));
+
+app.get('/api/products', (req, res) => res.json(products));
+
+app.post('/api/products', upload.single('image'), (req, res) => {
+  const { name, price, category, description, seller } = req.body;
+  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+
+  const newProduct = {
+    id: Date.now(),
+    name,
+    price: parseInt(price),
+    category: category || "general",
+    description: description || "",
+    seller: seller || "Unknown",
+    imageUrl,
+    createdAt: new Date()
+  };
+
+  products.push(newProduct);
+  res.json({ success: true, product: newProduct });
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});// backend/server.js
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
